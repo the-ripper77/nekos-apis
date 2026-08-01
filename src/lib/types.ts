@@ -18,10 +18,10 @@ export type SearchParams = {
   query?: string;
   type?: SearchType;
   category?: string;
-  amount?: number;
+  amount?: number | "all";
   tags?: string;
   rating?: string;
-  limit?: number;
+  limit?: number | "all";
 };
 
 export type SearchOutcome = { items: ProviderResult[]; count: number };
@@ -38,6 +38,7 @@ export type ProviderId = "nekos-best" | "nekosapi";
 export interface Provider {
   readonly id: ProviderId;
   readonly label: string;
+  getEndpoints(): Promise<Record<string, string>>;
   getCategories(): Promise<string[]>;
   getRandom(category: string | null, amount: number): Promise<ProviderResult[]>;
   search(params: SearchParams): Promise<SearchOutcome>;

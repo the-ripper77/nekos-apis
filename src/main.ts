@@ -132,7 +132,13 @@ const apiAsset = document.getElementById("nekosapi-asset-fields")!;
 
 let providerId = providerSelect.value as ProviderId;
 let provider: Provider = createProvider(providerId);
-let categories: string[] = [];
+let endpoints: Record<string, string> = {};
+
+function filteredCategories(format?: string): string[] {
+  const names = Object.keys(endpoints);
+  if (!format) return names;
+  return names.filter((n) => endpoints[n] === format);
+}
 
 function applyProvider(): void {
   const isBest = providerId === "nekos-best";
@@ -146,21 +152,33 @@ function applyProvider(): void {
   searchResult.innerHTML = "";
   assetResult.innerHTML = "";
   if (isBest) {
-    categories = [];
+    endpoints = {};
     fillSelect(searchCategory, ["loading…"]);
     fillSelect(assetCategory, ["loading…"]);
     provider
-      .getCategories()
-      .then((list) => {
-        categories = list;
-        fillSelect(searchCategory, list);
-        fillSelect(assetCategory, list);
+      .getEndpoints()
+      .then((ep) => {
+        endpoints = ep;
+        updateCategorySelects();
       })
       .catch((err) => {
         const message = err instanceof Error ? err.message : String(err);
         showError(searchCategory.parentElement ?? searchCategory, message);
       });
+  } else {
+    endpoints = {};
   }
+}
+
+function updateCategorySelects(): void {
+  const typeSelect = document.querySelector<HTMLSelectElement>(
+    '#search-form select[name="type"]'
+  );
+  const format = typeSelect?.value === "2" ? "gif" : "png";
+  const searchCats = filteredCategories(format);
+  fillSelect(searchCategory, searchCats.length > 0 ? searchCats : ["(none)"]);
+  const allCats = filteredCategories();
+  fillSelect(assetCategory, allCats.length > 0 ? allCats : ["(none)"]);
 }
 
 providerSelect.addEventListener("change", () => {
@@ -169,15 +187,24 @@ providerSelect.addEventListener("change", () => {
   applyProvider();
 });
 
+const searchTypeSelect = document.querySelector<HTMLSelectElement>(
+  '#search-form select[name="type"]'
+)!;
+searchTypeSelect.addEventListener("change", () => {
+  if (providerId === "nekos-best") {
+    updateCategorySelects();
+  }
+});
+
 document.getElementById("surprise-btn")!.addEventListener("click", async () => {
   loading(surpriseResult, "surprise");
   const isBest = providerId === "nekos-best";
-  if (isBest && categories.length === 0) {
+  if (isBest && Object.keys(endpoints).length === 0) {
     showError(surpriseResult, "Categories not loaded yet, try again.");
     return;
   }
   const category = isBest
-    ? categories[Math.floor(Math.random() * categories.length)]
+    ? filteredCategories()[Math.floor(Math.random() * filteredCategories().length)]
     : null;
   try {
     const [result] = await provider.getRandom(category, 1);
@@ -204,11 +231,13 @@ document.getElementById("search-form")!.addEventListener("submit", async (event)
     params.query = String(data.get("query") ?? "").trim();
     params.type = Number(data.get("type")) as SearchParams["type"];
     params.category = String(data.get("category") ?? "") || undefined;
-    params.amount = Math.min(Math.max(Number(data.get("amount")) || 1, 1), 20);
+    const raw = String(data.get("amount") ?? "10");
+    params.amount = raw === "all" ? "all" : Number(raw);
   } else {
     params.tags = String(data.get("tags") ?? "").trim() || undefined;
     params.rating = String(data.get("rating") ?? "safe");
-    params.limit = Math.min(Math.max(Number(data.get("limit")) || 10, 1), 100);
+    const raw = String(data.get("limit") ?? "10");
+    params.limit = raw === "all" ? "all" : Number(raw);
   }
 
   loading(searchResult, "search");

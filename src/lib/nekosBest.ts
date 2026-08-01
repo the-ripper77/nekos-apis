@@ -95,11 +95,12 @@ export class NekosBestClient implements Provider {
     const query = params.query?.trim() ?? "";
     if (!query) throw new Error("query is required");
     const type = params.type ?? 1;
+    const amount = params.amount === "all" ? 20 : clampAmount(params.amount ?? 10);
     const data = await this.request<{ results: unknown[] }>("/search", "search", {
       query,
       type,
       category: params.category,
-      amount: clampAmount(params.amount ?? 10),
+      amount,
     });
     const items = data.results.map((item) => parseResult(item));
     return { items, count: items.length };

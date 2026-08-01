@@ -76,6 +76,10 @@ export class NekosApiClient implements Provider {
     return (await res.json()) as T;
   }
 
+  async getEndpoints(): Promise<Record<string, string>> {
+    return {};
+  }
+
   async getCategories(): Promise<string[]> {
     return [];
   }
@@ -89,6 +93,34 @@ export class NekosApiClient implements Provider {
   }
 
   async search(params: SearchParams): Promise<SearchOutcome> {
+    if (params.limit === "all") {
+      const PAGE_SIZE = 100;
+      let offset = 0;
+      let allItems: ProviderResult[] = [];
+      let totalCount = 0;
+      // First request to get total count
+      const first = await this.request<{ items: NekosApiItem[]; count: number }>("/images", {
+        tags: params.tags,
+        rating: params.rating ?? "safe",
+        limit: PAGE_SIZE,
+        offset: 0,
+      });
+      allItems = first.items.map(parseItem);
+      totalCount = first.count;
+      offset = PAGE_SIZE;
+      while (offset < totalCount) {
+        const page = await this.request<{ items: NekosApiItem[]; count: number }>("/images", {
+          tags: params.tags,
+          rating: params.rating ?? "safe",
+          limit: PAGE_SIZE,
+          offset,
+        });
+        allItems = allItems.concat(page.items.map(parseItem));
+        if (page.items.length < PAGE_SIZE) break;
+        offset += PAGE_SIZE;
+      }
+      return { items: allItems, count: totalCount };
+    }
     const data = await this.request<{ items: NekosApiItem[]; count: number }>("/images", {
       tags: params.tags,
       rating: params.rating ?? "safe",
