@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/api/nekos-best/:path*", "destination": "https://nekos.best/api/v2/:path*" },
+    { "source": "/api/nekosapi/:path*", "destination": "https://api.nekosapi.com/v4/:path*" }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "nekos-api-check",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "TypeScript client and UI for the nekos.best API v2",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vite": "^8.2.0"
+  }
+}
