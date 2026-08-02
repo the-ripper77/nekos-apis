@@ -140,14 +140,23 @@ function filteredCategories(format?: string): string[] {
   return names.filter((n) => endpoints[n] === format);
 }
 
+function setGroupActive(group: HTMLElement, active: boolean): void {
+  group.hidden = !active;
+  group
+    .querySelectorAll<HTMLInputElement | HTMLSelectElement>("input, select")
+    .forEach((el) => {
+      el.disabled = !active;
+    });
+}
+
 function applyProvider(): void {
   const isBest = providerId === "nekos-best";
   providerLogo.src = PROVIDER_LOGOS[providerId];
   providerLogo.alt = provider.label;
-  bestSearch.hidden = !isBest;
-  apiSearch.hidden = isBest;
-  bestAsset.hidden = !isBest;
-  apiAsset.hidden = isBest;
+  setGroupActive(bestSearch, isBest);
+  setGroupActive(apiSearch, !isBest);
+  setGroupActive(bestAsset, isBest);
+  setGroupActive(apiAsset, !isBest);
   surpriseResult.innerHTML = "";
   searchResult.innerHTML = "";
   assetResult.innerHTML = "";
